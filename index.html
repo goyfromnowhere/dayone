@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Katak PMS Simulator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <style>
+    :root {
+      --bg: #e7f5ec;
+      --bg-alt: #f1e7ff;
+      --frog: #9be39b;
+      --text-main: #243447;
+      --text-soft: #4f5b66;
+      --accent: #f6a6c1;
+      --accent-dark: #e06b9b;
+      --card: #ffffffcc;
+      --danger: #ff6b81;
+      --radius-lg: 24px;
+      --radius-pill: 999px;
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.12);
+      --transition-fast: 180ms ease-out;
+      --transition-med: 240ms ease-out;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      color: var(--text-main);
+      background: radial-gradient(circle at top, var(--bg-alt), var(--bg));
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px; /* iPhone-ish width */
+      margin: 0 auto;
+      padding: 16px 14px 28px;
+      padding-top: env(safe-area-inset-top, 18px);
+      padding-bottom: env(safe-area-inset-bottom, 22px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      flex: 1;
+      background: var(--card);
+      border-radius: 32px;
+      box-shadow: var(--shadow-soft);
+      padding: 20px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .headline {
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .headline span {
+      background: linear-gradient(120deg, #ff8fb7, #b38bfa);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .simulator {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .frog-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px 0 4px;
+      position: relative;
+    }
+
+    .frog {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 20%, #ffffffaa, var(--frog));
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform var(--transition-med), filter var(--transition-med), opacity var(--transition-med);
+    }
+
+    .frog::before,
+    .frog::after {
+      content: "";
+      position: absolute;
+      top: 8px;
+      width: 40px;
+      height: 40px;
+      background: var(--frog);
+      border-radius: 50%;
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
+    }
+
+    .frog::before {
+      left: 18px;
+    }
+
+    .frog::after {
+      right: 18px;
+    }
+
+    .frog-face {
+      position: relative;
+      text-align: center;
+    }
+
+    .frog-emoji {
+      font-size: 46px;
+      line-height: 1;
+      display: block;
+      transition: transform var(--transition-med), opacity var(--transition-med);
+    }
+
+    .frog-mood-label {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .frog.bump {
+      animation: bump 230ms ease-out;
+    }
+
+    @keyframes bump {
+      0% {
+        transform: scale(1);
+      }
+      40% {
+        transform: scale(1.04);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .status-box {
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: background var(--transition-fast), transform var(--transition-fast), opacity var(--transition-fast);
+    }
+
+    .status-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #8c95a2;
+    }
+
+    .status-text {
+      font-size: 13px;
+    }
+
+    .mood-bar {
+      height: 6px;
+      border-radius: 999px;
+      background: #edf0f4;
+      overflow: hidden;
+      margin-top: 2px;
+      position: relative;
+    }
+
+    .mood-bar-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      border-radius: inherit;
+      width: 0%;
+      background: linear-gradient(90deg, #ffc857, #ff6b81);
+      transition: width var(--transition-med);
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: var(--radius-pill);
+      padding: 10px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: #f3f4f7;
+      color: var(--text-main);
+      box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: transform 120ms ease-out, box-shadow 120ms ease-out, background var(--transition-fast);
+    }
+
+    .btn span {
+      font-size: 15px;
+    }
+
+    .btn-label {
+      font-size: 10px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(120deg, var(--accent), var(--accent-dark));
+      color: white;
+      box-shadow: 0 4px 0 rgba(212, 104, 147, 0.8);
+    }
+
+    .btn-danger {
+      background: #ffe0e5;
+      color: var(--danger);
+      box-shadow: 0 4px 0 rgba(255, 107, 129, 0.7);
+    }
+
+    .btn:active {
+      transform: translateY(2px) scale(0.98);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.16);
+    }
+
+    .footer {
+      font-size: 10px;
+      text-align: center;
+      color: #9ba6b5;
+      margin-top: 4px;
+    }
+
+    .footer span {
+      opacity: 0.8;
+    }
+
+    .bunga-note {
+      margin-top: 4px;
+      font-size: 10px;
+      color: #8f9ab0;
+      line-height: 1.4;
+    }
+
+    .bunga-note strong {
+      color: #e06b9b;
+      font-weight: 700;
+    }
+
+    .overlay-end {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.7));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      color: #fefefe;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 260ms ease-out;
+    }
+
+    .overlay-end.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .overlay-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .overlay-sub {
+      font-size: 13px;
+      opacity: 0.9;
+      margin-bottom: 14px;
+    }
+
+    .btn-reset {
+      border-radius: var(--radius-pill);
+      padding: 8px 18px;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: #ffffff;
+      color: var(--accent-dark);
+      box-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
+      cursor: pointer;
+      transition: transform 120ms ease-out, box-shadow 120ms ease-out, background 140ms ease-out;
+    }
+
+    .btn-reset:active {
+      transform: translateY(2px) scale(0.97);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+    }
+
+    .muted {
+      opacity: 0.5;
+      filter: grayscale(0.2);
+    }
+
+    .interaction-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .floating-chip {
+      position: absolute;
+      left: 50%;
+      top: 58%;
+      transform: translate(-50%, 0);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--text-main);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      opacity: 0;
+      white-space: nowrap;
+      animation: floatUp 1350ms ease-out forwards;
+    }
+
+    .chip-chocolate {
+      background: linear-gradient(120deg, #ffb3c6, #f77f9c);
+      color: #ffffff;
+    }
+
+    .chip-talk {
+      background: #fff7d9;
+      color: #8b5e3c;
+    }
+
+    @keyframes floatUp {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, 6px) scale(0.9);
+      }
+      30% {
+        opacity: 1;
+        transform: translate(-50%, -2px) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -20px) scale(0.96);
+      }
+    }
+
+    @media (min-height: 780px) {
+      .frog {
+        width: 170px;
+        height: 170px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card" id="card">
+      <header>
+        <div class="headline"><span>KATAK (bunga) PMS SIMULATOR</span></div>
+        <div class="subtitle">Hari pertama. Jangan macem-macem.</div>
+      </header>
+
+      <section class="simulator" aria-live="polite">
+        <div class="frog-wrap">
+          <div class="frog" id="frog">
+            <div class="frog-face">
+              <div class="frog-emoji" id="frogEmoji">😐</div>
+              <div class="frog-mood-label" id="frogLabel">Mood: masih aman... dikit.</div>
+            </div>
+          </div>
+          <div class="interaction-layer" id="interactionLayer"></div>
+        </div>
+
+        <div class="status-box" id="statusBox">
+          <div class="status-title">Status katak</div>
+          <div class="status-text" id="statusText">
+            Kataknya diem, tapi dalem hati lagi nego sama hormon.
+          </div>
+          <div class="mood-bar" aria-hidden="true">
+            <div class="mood-bar-fill" id="moodFill"></div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="btnChocolate">
+            <span>🍫</span>
+            <div class="btn-label">Kasih Coklat</div>
+          </button>
+          <button class="btn" id="btnTalk">
+            <span>💬</span>
+            <div class="btn-label">Ajak Ngobrol</div>
+          </button>
+          <button class="btn btn-danger" id="btnLeave">
+            <span>😶</span>
+            <div class="btn-label">Tinggalin Aja</div>
+          </button>
+        </div>
+      </section>
+
+      <div class="overlay-end" id="overlayEnd">
+        <div class="overlay-title">SIMULATOR SELESAI</div>
+        <div class="overlay-sub">Biarkan dia rebahan. Jangan di-chat dulu.</div>
+        <button class="btn-reset" id="btnReset">Ulang dari Awal</button>
+      </div>
+    </section>
+
+    <div class="footer">
+      <span>Virtual hug buat yg lg PMS</span>
+      <div class="bunga-note">
+        <strong>Bunga</strong>, bikin suasana di sekitar kamu terasa lebih hidup dan hangat.
+      </div>
+    </div>
+  </main>
+
+  <audio id="popSound" preload="auto">
+    <source
+      src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA="
+      type="audio/wav"
+    />
+  </audio>
+
+  <script>
+    (function () {
+      const frogEmoji = document.getElementById("frogEmoji");
+      const frogLabel = document.getElementById("frogLabel");
+      const moodFill = document.getElementById("moodFill");
+      const statusText = document.getElementById("statusText");
+      const statusBox = document.getElementById("statusBox");
+      const frog = document.getElementById("frog");
+      const overlayEnd = document.getElementById("overlayEnd");
+      const btnReset = document.getElementById("btnReset");
+      const btnChocolate = document.getElementById("btnChocolate");
+      const btnTalk = document.getElementById("btnTalk");
+      const btnLeave = document.getElementById("btnLeave");
+      const popSound = document.getElementById("popSound");
+      const interactionLayer = document.getElementById("interactionLayer");
+
+      let mood = 0; // 0: netral, 1: kesal, 2: nangis
+      let ended = false;
+
+      const responses = {
+        neutral: [
+          "Kataknya diem… tapi dalem hatinya ribut.",
+          "Hari pertama… semua orang salah kecuali coklat.",
+          "Senyum dikit, tapi itu energi terakhir hari ini.",
+          "Kataknya masih bisa diajak negosiasi. Dikit.",
+        ],
+        annoyed: [
+          "Coklat membantu, tapi tidak menyelesaikan semua masalah.",
+          "“Kenapa kamu nafas deket-deket?” — kata katak.",
+          "Kataknya: “aku gak marah kok” (padahal marah).",
+          "Level sensitif: salah nada dikit langsung tersinggung.",
+        ],
+        crying: [
+          "Kataknya nangis. Sama.",
+          "Tiba-tiba pengen nangis gara-gara iklan sabun.",
+          "“Aku capek” — 3 kata, 999 emosi.",
+          "Air mata: on. Logika: off sebentar.",
+        ],
+        ended: [
+          "Kalo dipaksa terus, bukan cuma katak yang meledak.",
+          "Hari pertama tuh buat rebahan, bukan untuk debat.",
+          "Tugas kamu sekarang cuma satu: biarkan dia tenang.",
+        ],
+      };
+
+      function playPop() {
+        try {
+          popSound.currentTime = 0;
+          popSound.play().catch(() => {});
+        } catch (e) {}
+      }
+
+      function randFrom(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function spawnChip(type) {
+        if (!interactionLayer) return;
+        const chip = document.createElement("div");
+        chip.className =
+          "floating-chip " + (type === "chocolate" ? "chip-chocolate" : "chip-talk");
+
+        const messages =
+          type === "chocolate"
+            ? [
+                "Makasih coklatnya, lumayan nenangin…",
+                "Coklat diterima. Hormon sedikit luluh.",
+                "Manis. Kayak yang ngasih. Dikit.",
+              ]
+            : [
+                "Ngobrol pelan-pelan ya, jangan debat.",
+                "Didengerin tanpa di-judge itu enak.",
+                "“Aku cerita, kamu dengerin dulu.”",
+              ];
+
+        chip.textContent = randFrom(messages);
+        interactionLayer.appendChild(chip);
+        chip.addEventListener("animationend", () => {
+          chip.remove();
+        });
+      }
+
+      function updateUI() {
+        const percentage = (mood / 2) * 100;
+        moodFill.style.width = percentage + "%";
+
+        if (mood === 0) {
+          const neutralMsg = randFrom(responses.neutral);
+          statusText.textContent = neutralMsg;
+          if (neutralMsg.startsWith("Senyum dikit")) {
+            frogEmoji.textContent = "🙂";
+            frogLabel.textContent = "Mood: senyum dikit, energi sisa 3%.";
+          } else {
+            frogEmoji.textContent = "😐";
+            frogLabel.textContent = "Mood: masih aman... dikit.";
+          }
+          statusBox.style.background = "rgba(255,255,255,0.95)";
+        } else if (mood === 1) {
+          frogEmoji.textContent = "😠";
+          frogLabel.textContent = "Mood: hati-hati milih kata.";
+          statusText.textContent = randFrom(responses.annoyed);
+          statusBox.style.background = "rgba(255,240,245,0.96)";
+        } else {
+          frogEmoji.textContent = "😭";
+          frogLabel.textContent = "Mood: apa aja bisa jadi alasan nangis.";
+          statusText.textContent = randFrom(responses.crying);
+          statusBox.style.background = "rgba(255,235,240,0.96)";
+        }
+
+        frog.classList.remove("bump");
+        void frog.offsetWidth;
+        frog.classList.add("bump");
+      }
+
+      function endSimulator() {
+        ended = true;
+        overlayEnd.classList.add("visible");
+        frog.classList.add("muted");
+        statusBox.classList.add("muted");
+        btnChocolate.disabled = true;
+        btnTalk.disabled = true;
+        btnLeave.disabled = true;
+        statusText.textContent = randFrom(responses.ended);
+      }
+
+      function changeMood(delta, isCareAction) {
+        if (ended) return;
+
+        if (delta > 0) {
+          mood = Math.min(2, mood + delta);
+        } else if (delta < 0) {
+          const improveChance = mood === 2 ? 0.6 : 0.8;
+          if (Math.random() < improveChance) {
+            mood = Math.max(0, mood + delta);
+          }
+        }
+
+        if (mood === 2 && !isCareAction) {
+          setTimeout(endSimulator, 260);
+        }
+
+        updateUI();
+        playPop();
+      }
+
+      btnChocolate.addEventListener("click", () => {
+        changeMood(-1, true);
+        spawnChip("chocolate");
+      });
+
+      btnTalk.addEventListener("click", () => {
+        const delta = mood === 0 ? 0 : Math.random() < 0.5 ? -1 : 1;
+        changeMood(delta, true);
+        spawnChip("talk");
+      });
+
+      btnLeave.addEventListener("click", () => {
+        changeMood(1, false);
+      });
+
+      btnReset.addEventListener("click", () => {
+        mood = 0;
+        ended = false;
+        overlayEnd.classList.remove("visible");
+        frog.classList.remove("muted");
+        statusBox.classList.remove("muted");
+        btnChocolate.disabled = false;
+        btnTalk.disabled = false;
+        btnLeave.disabled = false;
+        updateUI();
+        playPop();
+      });
+
+      updateUI();
+    })();
+  </script>
+</body>
+</html>
